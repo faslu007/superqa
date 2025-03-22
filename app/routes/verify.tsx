@@ -6,9 +6,14 @@ import { db } from "~/utils/db.server";
 import { compareHash } from "~/utils/hash.server";
 import AuthSkeleton from "~/components/AuthSkeleton";
 import AppLogo from "~/components/appLogo";
-import { createUserSession } from "~/utils/session.server";
+import { createUserSession, getUserId } from "~/utils/session.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
+    const userId = await getUserId(request);
+    if (userId) {
+        return redirect("/");
+    }
+
     const url = new URL(request.url);
     const email = url.searchParams.get("email");
     const id = url.searchParams.get("id");

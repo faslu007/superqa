@@ -1,4 +1,5 @@
 import { createCookieSessionStorage, redirect } from "@remix-run/node";
+import { db } from "~/utils/db.server";
 
 const sessionSecret = process.env.SESSION_SECRET;
 if (!sessionSecret) {
@@ -41,11 +42,34 @@ export async function getUserId(request: Request) {
 export async function requireUserId(request: Request, redirectTo: string = new URL(request.url).pathname) {
     const session = await getUserSession(request);
     const userId = session.get("userId");
+
     if (!userId || typeof userId !== "string") {
         const searchParams = new URLSearchParams([["redirectTo", redirectTo]]);
         throw redirect(`/signin?${searchParams}`);
     }
-    return userId;
+
+    try {
+        const user = await db.user.findFirst({
+            where: { id: userId }
+        });
+
+        if (!user) {
+            throw redirect("/signin", {
+                headers: {
+                    "Set-Cookie": await storage.destroySession(session),
+                },
+            });
+        }
+
+        return userId;
+    } catch (error) {
+        console.error("Database error:", error);
+        throw redirect("/signin", {
+            headers: {
+                "Set-Cookie": await storage.destroySession(session),
+            },
+        });
+    }
 }
 
 export async function logout(request: Request) {

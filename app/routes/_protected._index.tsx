@@ -5,9 +5,13 @@ import { db } from "~/utils/db.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	const userId = await requireUserId(request);
+	if (!userId) {
+		throw redirect("/signin");
+	}
+
 	const user = await db.user.findUnique({
 		where: { id: userId },
-		select: { id: true, name: true, email: true },
+		select: { id: true, name: true, email: true }
 	});
 
 	if (!user) {

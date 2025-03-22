@@ -1,4 +1,4 @@
-import { redirect, type ActionFunctionArgs, type MetaFunction } from "@remix-run/node";
+import { redirect, type ActionFunctionArgs, type MetaFunction, type LoaderFunctionArgs } from "@remix-run/node";
 import { Form, useActionData, useNavigation, useSearchParams } from "@remix-run/react";
 import { Button, Input, Card, CardBody, CardHeader } from "@heroui/react";
 import { useState } from "react";
@@ -7,12 +7,20 @@ import { EyeFilledIcon, EyeSlashFilledIcon, MailIcon, PasswordIcon } from "~/com
 import AuthSkeleton from "~/components/AuthSkeleton";
 import { compareHash } from "~/utils/hash.server";
 import { db } from "~/utils/db.server";
-import { createUserSession } from "../utils/session.server";
+import { createUserSession, getUserId } from "~/utils/session.server";
 
 export const meta: MetaFunction = () => [
     { title: "Super QA - Sign In" },
     { name: "description", content: "Sign in to your Super QA account" },
 ];
+
+export async function loader({ request }: LoaderFunctionArgs) {
+    const userId = await getUserId(request);
+    if (userId) {
+        return redirect("/");
+    }
+    return null;
+}
 
 type ActionData = { error: string } | Response;
 

@@ -20,6 +20,8 @@ model User {
   password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  createdProjects Project[]
+  projectMemberships ProjectMember[]
 }
 
 model TempUser {
@@ -30,4 +32,62 @@ model TempUser {
   otp       String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum ProjectRole {
+    owner
+    admin
+    tester
+    viewer
+}
+
+enum ProjectMemberStatus {
+    active
+    inactive
+    pending
+}
+
+model Project {
+    id          String   @id @default(uuid())
+    name        String
+    description String
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    status      String   @default("active")
+    createdBy   String   // User who created the project
+    
+    // Integration tokens
+    jiraToken        String?
+    mattermostToken  String?
+    sentryToken      String?
+    
+    // Environment settings
+    defaultEnvironment String
+    
+    // Notification preferences
+    emailNotifications    Boolean @default(false)
+    slackNotifications    Boolean @default(false)
+    mattermostNotifications Boolean @default(false)
+
+    // Relations
+    creator     User           @relation(fields: [createdBy], references: [id])
+    members     ProjectMember[]
+}
+
+model ProjectMember {
+    id          String   @id @default(uuid())
+    projectId   String
+    userId      String   // Foreign key to User
+    role        ProjectRole
+    status      ProjectMemberStatus @default(active)
+    joinedAt    DateTime @default(now())
+    lastActive  DateTime @default(now())
+    permissions Json     @default("{}")
+
+    // Relations
+    project     Project  @relation(fields: [projectId], references: [id])
+    user        User     @relation(fields: [userId], references: [id])
+
+    @@index([projectId])
+    @@index([userId])
 }
